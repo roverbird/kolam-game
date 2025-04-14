@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon Phase Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 50px; }
+        #moonPhase, #illumination { font-size: 1.5em; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Moon Phase Calculator</h1>
+    <p>Today's Moon Phase:</p>
+    <div id="moonPhase"></div>
+    <p>Illumination Percentage:</p>
+    <div id="illumination"></div>
+
+    <script>
+        function getMoonPhase(year, month, day) {
+            const LUNAR_CYCLE_DAYS = 29.5305882;
+            const REFERENCE_JULIAN_DATE = 694039.09;
+
+            if (month < 3) {
+                year -= 1;
+                month += 12;
+            }
+
+            const julianDays = Math.floor(365.25 * year) + Math.floor(30.6 * (month + 1)) + day - REFERENCE_JULIAN_DATE;
+            let moonAge = (julianDays / LUNAR_CYCLE_DAYS) % 1;
+            let phase = Math.round(moonAge * 8) % 8;
+            let illumination = (1 - Math.cos(moonAge * 2 * Math.PI)) / 2 * 10;
+
+            const phases = [
+                "New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"
+            ];
+
+            return { phaseName: phases[phase], illumination: illumination.toFixed(3) };
+        }
+
+        // Get current date
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1; // Months are zero-based in JS
+        const day = today.getDate();
+
+        const moonData = getMoonPhase(year, month, day);
+        document.getElementById("moonPhase").innerText = moonData.phaseName;
+        document.getElementById("illumination").innerText = moonData.illumination + "%";
+    </script>
+</body>
+</html>
+

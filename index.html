@@ -2,13 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kolam Pattern</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kolam Pattern Game</title>
+
+    <!-- p5.js and custom scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
-    <style> body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: black; } </style>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BZ1VVM52G2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-0B4W23KH9S');
+    </script>
+
+    <script src="./js/game.js?ver11" defer></script>
+    <script src="./js/message.js?ver10" defer></script>
+
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Centered square container */
+        #squareElement {
+            width: 200px;
+            background-color: black;
+            display: flex;
+            justify-content: top;
+            align-items: center;
+        }
+
+        /* Bottom controls */
+        .controls {
+            padding: 20px 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        .tag {
+            cursor: pointer;
+            padding: 10px;
+            font-size: 1.5rem;
+        }
+    </style>
 </head>
 <body>
-    <script src="sketch.js"></script>
+
+    <!-- Top menu -->
+    <nav style="padding: 5px; width: 100%; background: linear-gradient(to bottom, #666, #000); text-align: center;">
+
+        <a href="/" style="color: white; font-size: 1 rem; text-decoration: none;"> · ರಂಗೋಲೆ  · kolam moon magic · help · </a>
+    </nav>
+
+    <!-- Canvas Container inside the square element -->
+    <div id="canvasContainer">
+        <div id="squareElement" data-tsize="25" data-margin="3" data-tnumber="4,5,6,7,8,9,10"></div>
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="controls">
+        <span id="saveKolamPattern" class="tag is-black">📷</span>
+        <span id="messageBox" class="tag is-black"></span>
+        <span id="help" class="tag is-black">❔</span>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const helpTag = document.getElementById("help");
+            const messageBox = document.getElementById("messageBox");
+
+            helpTag.addEventListener("click", function(event) {
+                event.stopPropagation(); // Prevent interference from other scripts
+                messageBox.textContent = "Tap around!";
+            });
+        });
+    </script>
 </body>
 </html>
 

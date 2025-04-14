@@ -1,0 +1,183 @@
+let margin = 5; // Margin size
+let tsize = 41; // Tile size
+
+let crossings = 3; // Number of crossings (as per Kolam rule)
+let pullis = crossings + 1; // Number of pullis (dots) = crossings + 1
+let edges = 2 * crossings; // Number of edges = 2 * crossings
+let tnumber = pullis; // Set tnumber to number of pullis, it will represent both rows and columns
+
+let link, nlink; // Connections
+let idx = 0; // Index for interpolation
+let pg; // Graphics buffer
+let bgcolor; // Background color
+
+// Memory variables
+let memoryFactor = 1; // The weight for how much of the past value should influence the current one
+let previousProb = [];  // Store the previous probability values for each point
+
+function setup() {
+    createCanvas(700, 700);
+    bgcolor = color(random(50), random(50), random(50));
+
+    pg = createGraphics(tsize * tnumber + 2 * margin, tsize * tnumber + 2 * margin);
+
+    // Initialize the link and nlink arrays
+    link = Array.from({ length: tnumber + 1 }, () => Array(tnumber + 1).fill(1));
+    nlink = Array.from({ length: tnumber + 1 }, () => Array(tnumber + 1).fill(1));
+
+    // Initialize previousProb if it's not set
+    initializePreviousProb();
+
+    configTile(0); // Initialize with a default value to avoid undefined errors
+    background(bgcolor);
+}
+
+function draw() {
+    if (idx <= 1) drawTile();
+
+    push();
+    translate(width / 2, height / 2);
+    rotate(PI / 4);
+    imageMode(CENTER);
+    image(pg, 0, 0);
+    pop();
+}
+
+function mouseClicked() {
+    // Calculate the mouse distance from the center and pass it to configTile
+    let mouseDist = dist(mouseX, mouseY, width / 2, height / 2) / 3;
+    console.log("Mouse distance from center: ", mouseDist); // Check the value in the console
+    configTile(mouseDist); // Pass the distance to the configTile function
+}
+
+function initializePreviousProb() {
+    // Initialize previousProb array if it's not already initialized
+    if (previousProb.length === 0) {
+        for (let i = 0; i < nlink.length; i++) {
+            previousProb[i] = Array(nlink[0].length).fill(0.5); // Neutral probability
+        }
+    }
+}
+
+function configTile(mouseDist) {
+    idx = 0; // Reset index
+
+    // Update old links
+    [link, nlink] = [nlink, link]; // Swap arrays in one step
+
+    // Create new links based on mouse click position
+    let nlinkLen = nlink.length;
+    let nlinkRowLen = nlink[0].length;
+
+    for (let i = 0; i < nlinkLen; i++) {
+        for (let j = i; j < nlinkRowLen / 2; j++) {
+            // Precompute distances
+            let centerDistance = dist(i, j, nlinkLen / 2, nlinkRowLen / 2);
+            let maxDistance = dist(0, 0, nlinkLen / 2, nlinkRowLen / 2);
+
+            // Calculate connection probabilities
+            let limit = map(mouseDist, 0, width / 2, 0.1, 0.9); // Influence of mouse position on connection probability
+            let connectionProb = centerDistance / maxDistance;
+
+            // Combine the two probabilities: mouse distance and center distance
+            let currentProb = limit * (1 - connectionProb);
+
+            // Blend the current probability with the previous memory (weighted average)
+            let blendedProb = memoryFactor * currentProb + (1 - memoryFactor) * previousProb[i][j];
+
+            // Update the previousProb array to store the current probability for the next iteration
+            previousProb[i][j] = blendedProb;
+
+            // Determine if there should be a connection based on the blended probability
+            let l = random(0, 1) > blendedProb ? 1 : 0;
+
+            console.log("blendedProb: ", blendedProb); // Check the value in the console
+
+            // Apply symmetric connections in a more compact way
+            applySymmetricConnections(i, j, l, nlinkLen, nlinkRowLen);
+        }
+    }
+}
+
+function applySymmetricConnections(i, j, l, nlinkLen, nlinkRowLen) {
+    // Apply the same link value symmetrically across the grid
+    nlink[i][j] = l;
+    nlink[i][nlinkRowLen - j - 1] = l;
+    nlink[j][i] = l;
+    nlink[nlinkRowLen - j - 1][i] = l;
+    nlink[nlinkLen - i - 1][j] = l;
+    nlink[nlinkLen - i - 1][nlinkRowLen - j - 1] = l;
+    nlink[j][nlinkLen - i - 1] = l;
+    nlink[nlinkRowLen - j - 1][nlinkLen - i - 1] = l;
+}
+
+function drawTile() {
+    pg.background(bgcolor);
+    pg.noFill();
+    pg.stroke(255);
+    pg.strokeWeight(5);
+
+    // Drawing tiles
+    for (let i = 0; i < tnumber; i++) {
+        for (let j = 0; j < tnumber; j++) {
+            if ((i + j) % 2 === 0) {
+                let top_left = (tsize / 2) * lerp(link[i][j], nlink[i][j], idx);
+                let top_right = (tsize / 2) * lerp(link[i + 1][j], nlink[i + 1][j], idx);
+                let bottom_right = (tsize / 2) * lerp(link[i + 1][j + 1], nlink[i + 1][j + 1], idx);
+                let bottom_left = (tsize / 2) * lerp(link[i][j + 1], nlink[i][j + 1], idx);
+
+                pg.rect(i * tsize + margin, j * tsize + margin, tsize, tsize, top_left, top_right, bottom_right, bottom_left);
+                pg.point(i * tsize + tsize / 2 + margin, j * tsize + tsize / 2 + margin);
+            }
+        }
+    }
+
+    // Update index
+    idx += 0.02;
+    idx = constrain(idx, 0, 1);
+}
+
+function dfs(node, visited) {
+    visited[node] = true;
+    for (let i = 0; i < nlink[node].length; i++) {
+        if (nlink[node][i] === 1 && !visited[i]) {
+            dfs(i, visited);
+        }
+    }
+}
+
+function checkConnectedness() {
+    let visited = Array(nlink.length).fill(false);
+    dfs(0, visited); // Start DFS from the first node (dot)
+
+    // If all nodes are visited, the graph is connected
+    return visited.every(v => v === true);
+}
+
+function isEulerianPath() {
+    return checkDegrees() && checkConnectedness();
+    console.log("checkConnectedness: ", checkConnectedness); // Check the value in the console
+}
+
+function verifyKolamMath() {
+    let crossings = 0, edges = 0;
+
+    for (let i = 0; i < tnumber; i++) {
+        for (let j = 0; j < tnumber; j++) {
+            let e = 0;
+            if (nlink[i][j]) e++; 
+            if (nlink[i + 1][j]) e++;
+            if (nlink[i][j + 1]) e++;
+            if (nlink[i + 1][j + 1]) e++;
+            
+            if (e === 4) crossings++; 
+            edges += e / 2; // Each edge counted twice
+        }
+    }
+
+    let pullis = crossings + 1;
+
+    console.log(`Pullis: ${pullis}, Crossings: ${crossings}, Edges: ${edges}`);
+    console.log(`Validation: ${pullis + crossings === edges + 1}`);
+}
+
